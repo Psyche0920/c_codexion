@@ -6,7 +6,7 @@
 /*   By: wehan <wehan@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/17 13:25:24 by wehan             #+#    #+#             */
-/*   Updated: 2026/05/17 13:46:08 by wehan            ###   ########.fr       */
+/*   Updated: 2026/05/17 17:21:43 by wehan            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,21 +14,17 @@
 
 int	main(int argc, char **argv)
 {
-	t_config	config;
+	t_app	app;
 
-	if (!parse_args(argc, argv, &config))
+	if (!parse_args(argc, argv, &app.config))
 		return (1);
-	printf("number_of_coders: %d\n", config.number_of_coders);
-	printf("time_to_burnout: %ld\n", config.time_to_burnout);
-	printf("time_to_compile: %ld\n", config.time_to_compile);
-	printf("time_to_debug: %ld\n", config.time_to_debug);
-	printf("time_to_refactor: %ld\n", config.time_to_refactor);
-	printf("number_of_compiles_required: %d\n",
-		config.number_of_compiles_required);
-	printf("dongle_cooldown: %ld\n", config.dongle_cooldown);
-	if (config.scheduler == 0)
-		printf("scheduler: fifo\n");
-	else
-		printf("scheduler: edf\n");
+	app.start_time = get_time_ms();
+	pthread_mutex_init(&app.log_mutex, NULL);
+	safe_log(&app, 1, "has taken a dongle");
+	usleep(1000);
+	safe_log(&app, 1, "has taken a dongle");
+	usleep(1000);
+	safe_log(&app, 1, "is compiling");
+	pthread_mutex_destroy(&app.log_mutex);
 	return (0);
 }

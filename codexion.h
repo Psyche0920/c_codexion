@@ -6,7 +6,7 @@
 /*   By: wehan <wehan@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/17 12:36:39 by wehan             #+#    #+#             */
-/*   Updated: 2026/05/17 13:20:39 by wehan            ###   ########.fr       */
+/*   Updated: 2026/05/17 16:57:05 by wehan            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,16 @@ typedef struct s_config
 	int		scheduler;
 }	t_config;
 
-int	parse_args(int argc, char **argv, t_config *config);
+typedef struct s_app
+{
+	t_config		config;
+	long			start_time;
+	pthread_mutex_t	log_mutex;
+}	t_app;
+
+int		parse_args(int argc, char **argv, t_config *config);
+long	get_time_ms(void);
+long	timestamp(t_app *app);
+void	safe_log(t_app *app, int id, char *msg);
 
 #endif
