@@ -6,7 +6,7 @@
 /*   By: wehan <wehan@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/17 12:36:39 by wehan             #+#    #+#             */
-/*   Updated: 2026/05/17 18:03:45 by wehan            ###   ########.fr       */
+/*   Updated: 2026/05/18 21:10:40 by wehan            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,8 @@
 # include <stdlib.h>
 # include <stdio.h>
 # include <string.h>
+
+typedef struct s_app t_app;
 
 typedef struct s_config
 {
@@ -38,6 +40,7 @@ typedef struct s_coder
 	pthread_t	thread;
 	t_app		*app;
 }	t_coder;
+
 typedef struct s_app
 {
 	t_config		config;
