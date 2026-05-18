@@ -6,7 +6,7 @@
 /*   By: wehan <wehan@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/17 17:41:54 by wehan             #+#    #+#             */
-/*   Updated: 2026/05/18 21:08:32 by wehan            ###   ########.fr       */
+/*   Updated: 2026/05/18 21:30:17 by wehan            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,8 +18,9 @@ void	*coder_routine(void *arg)
 
 	coder = (t_coder *)arg;
 	safe_log(coder->app, coder->id, "is refactoring");
-	usleep(1000 * 1000);
+	usleep(coder->app->config.time_to_refactor * 1000);
 	safe_log(coder->app, coder->id, "is debugging");
+	usleep(coder->app->config.time_to_debug * 1000);
 	return (NULL);	
 }
 
