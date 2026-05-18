@@ -6,7 +6,7 @@
 /*   By: wehan <wehan@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/17 12:36:39 by wehan             #+#    #+#             */
-/*   Updated: 2026/05/18 21:43:40 by wehan            ###   ########.fr       */
+/*   Updated: 2026/05/18 23:18:52 by wehan            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,7 @@ typedef struct s_config
 typedef struct s_coder
 {
 	int			id;
+	int			compile_count;
 	pthread_t	thread;
 	t_app		*app;
 }	t_coder;

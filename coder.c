@@ -6,7 +6,7 @@
 /*   By: wehan <wehan@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/17 17:41:54 by wehan             #+#    #+#             */
-/*   Updated: 2026/05/18 22:43:21 by wehan            ###   ########.fr       */
+/*   Updated: 2026/05/18 23:26:26 by wehan            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,15 +17,19 @@ void	*coder_routine(void *arg)
 	t_coder	*coder;
 
 	coder = (t_coder *)arg;
-	take_dongles(coder);
-	safe_log(coder->app, coder->id, "is compiling");
-	usleep(coder->app->config.time_to_compile * 1000);
-	release_dongles(coder);
-	safe_log(coder->app, coder->id, "is debugging");
-	usleep(coder->app->config.time_to_debug * 1000);
-	safe_log(coder->app, coder->id, "is refactoring");
-	usleep(coder->app->config.time_to_refactor * 1000);
-	return (NULL);	
+	while (coder->compile_count < coder->app->config.number_of_compiles_required)
+	{
+		take_dongles(coder);
+		safe_log(coder->app, coder->id, "is compiling");
+		usleep(coder->app->config.time_to_compile * 1000);
+		coder->compile_count++;
+		release_dongles(coder);
+		safe_log(coder->app, coder->id, "is debugging");
+		usleep(coder->app->config.time_to_debug * 1000);
+		safe_log(coder->app, coder->id, "is refactoring");
+		usleep(coder->app->config.time_to_refactor * 1000);
+	}
+	return (NULL);
 }
 
 int	init_coders(t_app *app)
@@ -39,6 +43,7 @@ int	init_coders(t_app *app)
 	while (i < app->config.number_of_coders)
 	{	
 		app->coders[i].id = i + 1;
+		app->coders[i].compile_count = 0;
 		app->coders[i].app = app;
 		if(pthread_create(
 			&app->coders[i].thread,
@@ -62,6 +67,10 @@ void join_coders(t_app *app)
 		i++;
 	}
 }
+
+// 每个 coder 不只 compile 一次
+// 而是 compile N 次
+// N = number_of_compiles_required
 
 
 // pthread_create(&thread, NULL, routine, arg);
