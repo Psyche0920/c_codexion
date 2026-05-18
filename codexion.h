@@ -6,7 +6,7 @@
 /*   By: wehan <wehan@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/17 12:36:39 by wehan             #+#    #+#             */
-/*   Updated: 2026/05/18 21:10:40 by wehan            ###   ########.fr       */
+/*   Updated: 2026/05/18 21:43:40 by wehan            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,6 +45,7 @@ typedef struct s_app
 {
 	t_config		config;
 	t_coder			*coders;
+	pthread_mutex_t *dongles;
 	long			start_time;
 	pthread_mutex_t	log_mutex;
 }	t_app;
@@ -56,5 +57,9 @@ void	safe_log(t_app *app, int id, char *msg);
 int		init_coders(t_app *app);
 void	join_coders(t_app *app);
 void	*coder_routine(void *arg);
+int		init_dongles(t_app *app);
+void	destroy_dongles(t_app *app);
+void	take_dongles(t_coder *coder);
+void	release_dongles(t_coder *coder);
 
 #endif
