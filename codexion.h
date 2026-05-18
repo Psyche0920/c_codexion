@@ -6,7 +6,7 @@
 /*   By: wehan <wehan@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/17 12:36:39 by wehan             #+#    #+#             */
-/*   Updated: 2026/05/18 23:18:52 by wehan            ###   ########.fr       */
+/*   Updated: 2026/05/19 00:07:58 by wehan            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ typedef struct s_coder
 	int			compile_count;
 	pthread_t	thread;
 	t_app		*app;
+	long		last_compile_start;
 }	t_coder;
 
 typedef struct s_app
@@ -49,18 +50,28 @@ typedef struct s_app
 	pthread_mutex_t *dongles;
 	long			start_time;
 	pthread_mutex_t	log_mutex;
+	pthread_t		monitor;
+	pthread_mutex_t	state_mutex;
+	int				stop;
 }	t_app;
 
 int		parse_args(int argc, char **argv, t_config *config);
 long	get_time_ms(void);
 long	timestamp(t_app *app);
 void	safe_log(t_app *app, int id, char *msg);
+
 int		init_coders(t_app *app);
 void	join_coders(t_app *app);
 void	*coder_routine(void *arg);
+
 int		init_dongles(t_app *app);
 void	destroy_dongles(t_app *app);
 void	take_dongles(t_coder *coder);
 void	release_dongles(t_coder *coder);
+
+void	*monitor_routine(void *arg);
+int		is_stopped(t_app *app);
+void	set_stop(t_app *app);
+void	update_compile_start(t_coder *coder);
 
 #endif

@@ -6,7 +6,7 @@
 /*   By: wehan <wehan@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/17 13:25:24 by wehan             #+#    #+#             */
-/*   Updated: 2026/05/18 22:54:11 by wehan            ###   ########.fr       */
+/*   Updated: 2026/05/19 00:05:14 by wehan            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,8 @@ int	main(int argc, char **argv)
 	app.start_time = get_time_ms();
 	app.coders = NULL;
 	app.dongles = NULL;
+	app.stop = 0;
+	pthread_mutex_init(&app.state_mutex, NULL);
 	pthread_mutex_init(&app.log_mutex, NULL);
 	if (!init_dongles(&app) || !init_coders(&app))
 	{
@@ -29,9 +31,13 @@ int	main(int argc, char **argv)
 		free(app.dongles);
 		return (1);
 	}
+	pthread_create(&app.monitor, NULL, monitor_routine, &app);
 	join_coders(&app);
+	set_stop(&app);
+	pthread_join(app.monitor, NULL);
 	destroy_dongles(&app);
 	pthread_mutex_destroy(&app.log_mutex);
+	pthread_mutex_destroy(&app.state_mutex);
 	free(app.coders);
 	return (0);
 }
