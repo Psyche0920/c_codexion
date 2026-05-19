@@ -6,7 +6,7 @@
 /*   By: wehan <wehan@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/17 17:41:54 by wehan             #+#    #+#             */
-/*   Updated: 2026/05/19 00:52:56 by wehan            ###   ########.fr       */
+/*   Updated: 2026/05/19 20:36:19 by wehan            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,8 +15,17 @@
 void	*coder_routine(void *arg)
 {
 	t_coder	*coder;
-
+	
 	coder = (t_coder *)arg;
+	if (coder->app->config.number_of_coders == 1)
+	{
+		pthread_mutex_lock(&coder->app->dongles[0]);
+		safe_log(coder->app, coder->id, "has taken a dongle");
+		while(!is_stopped(coder->app))
+			usleep(1000);
+		pthread_mutex_unlock(&coder->app->dongles[0]);
+		return (NULL);
+	}
 	while (!is_stopped(coder->app) && coder->compile_count < coder->app->config.number_of_compiles_required)
 	{
 		take_dongles(coder);
@@ -79,33 +88,75 @@ void join_coders(t_app *app)
 	}
 }
 
-// 1. [coder_routine]根据 subject：
+// Step 9：处理 1 个 coder 特殊情况
 
-// If a coder did not start compiling within time_to_burnout milliseconds
-// since the beginning of their last compile
-// or the beginning of the simulation,
-// they burn out.
+// 因为 subject 说：
 
-// 真正意思是：
+// If there is only one coder, there should be only one dongle on the table.
 
-// burnout 只看：
-// 当前时间 - 上一次开始 compile 的时间
-// 完全不管：
-// 当前正在 debug
-// 当前正在 refactor
-// 当前正在等待 mutex
-// 当前正在 sleep
+// 1 个 coder 只有 1 个 dongle，不能拿两个，所以它应该：
 
-// 2. 每个 coder 不只 compile 一次
-// 而是 compile N 次
-// N = number_of_compiles_required
+// 拿到一个 dongle
+// 然后等到 burned out
 
-// 3. pthread_create(&thread, NULL, routine, arg);
-// 第1个：thread 的地址，系统会把新线程信息写进去
-// 第2个：线程属性，NULL = 默认
-// 第3个：线程要执行的函数
-// 第4个：传给线程函数的参数
+// 1.  为什么同一个 coder 不能拿同一个 dongle 两次？
 
-// pthread_join(thread, NULL);
-// 第1个：你要等待的 thread
-// 第2个：接收 thread return value 的地址，NULL = 不关心返回值
+// 因为 subject 的逻辑是：
+// compile 需要两个 dongles
+// one in each hand
+
+// 也就是说：
+// 左手一个 dongle
+// 右手一个 dongle
+// 不是：
+// 同一个 dongle 算两个
+
+// subject 还说：如果只有一个 coder，桌上只有一个 dongle。
+// 所以 1 coder 时：
+// 只有 1 个 dongle
+// compile 需要 2 个 dongles
+// => 永远不能 compile
+// => 最后 burned out
+
+// 你的原代码在 n == 1 时：
+// left = coder->id - 1;  // 0
+// right = coder->id % n; // 1 % 1 = 0
+
+// 所以：
+// left = 0
+// right = 0
+
+// 它不是拿两个 dongles，而是想拿：
+// dongle[0] + dongle[0]
+// 这在逻辑上就是错的。
+
+// 而且在 pthread 层面：
+// pthread_mutex_lock(&dongles[0]);
+// pthread_mutex_lock(&dongles[0]);
+// 第二次不会成功。
+// 它会卡住，因为普通 mutex 不允许同一个 thread 重复 lock。
+
+// 所以：
+// 逻辑上：同一个 dongle 不能当成两个 dongles
+// 技术上：同一个 mutex 重复 lock 会 self-deadlock
+// 因此必须 special case。
+
+// 2. 正确顺序是：
+// coder:
+// 拿第 1 个 dongle
+// 不尝试拿不存在的第 2 个 dongle
+// while (!stop) 等待
+
+// monitor:
+// 发现超时 burnout
+// 打印 "burned out"
+// set_stop = 1
+
+// coder:
+// while 结束
+// unlock 第 1 个 dongle
+// return NULL
+
+// main:
+// !!!pthread_join 成功(not unlock, get stuck in the threads burnout is not success)
+// 程序结束
