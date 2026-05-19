@@ -3,7 +3,7 @@ NAME = codexion
 CC = cc
 CFLAGS = -Wall -Wextra -Werror -pthread
 
-SRCS = main.c parse.c time.c log.c coder.c dongle.c monitor.c
+SRCS = main.c parse.c time.c log.c coder.c dongle.c monitor.c queue.c heap.c
 OBJS = $(SRCS:.c=.o)
 
 all: $(NAME)
