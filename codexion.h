@@ -6,7 +6,7 @@
 /*   By: wehan <wehan@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/17 12:36:39 by wehan             #+#    #+#             */
-/*   Updated: 2026/05/19 00:07:58 by wehan            ###   ########.fr       */
+/*   Updated: 2026/05/19 20:54:50 by wehan            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,11 +43,17 @@ typedef struct s_coder
 	long		last_compile_start;
 }	t_coder;
 
+typedef struct s_dongle
+{
+	pthread_mutex_t mutex;
+	long			available_at;
+}	t_dongle;
+
 typedef struct s_app
 {
 	t_config		config;
 	t_coder			*coders;
-	pthread_mutex_t *dongles;
+	t_dongle		*dongles;
 	long			start_time;
 	pthread_mutex_t	log_mutex;
 	pthread_t		monitor;

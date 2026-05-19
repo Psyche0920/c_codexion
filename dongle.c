@@ -4,13 +4,14 @@ int init_dongles(t_app *app)
 {
     int i;
 
-    app->dongles = malloc(sizeof(pthread_mutex_t) * app->config.number_of_coders);
+    app->dongles = malloc(sizeof(t_dongle) * app->config.number_of_coders);
     if(!app->dongles)
         return (0);
     i = 0;
     while (i < app->config.number_of_coders)
     {
-        pthread_mutex_init(&app->dongles[i], NULL);
+        pthread_mutex_init(&app->dongles[i].mutex, NULL);
+		app->dongles[i].available_at = 0;
         i++;
     }
     return (1);
@@ -23,7 +24,7 @@ void	destroy_dongles(t_app *app)
 	i = 0;
 	while(i < app->config.number_of_coders)
 	{
-		pthread_mutex_destroy(&app->dongles[i]);
+		pthread_mutex_destroy(&app->dongles[i].mutex);
 		i++;
 	}
 	free(app->dongles);
@@ -56,9 +57,23 @@ void	take_dongles(t_coder *coder)
 	int	second;
 
 	get_order(coder, &first, &second);
-	pthread_mutex_lock(&coder->app->dongles[first]);
+	while (1)
+	{
+		pthread_mutex_lock(&coder->app->dongles[first].mutex);
+		if (get_time_ms() >= coder->app->dongles[first].available_at)
+			break ;
+		pthread_mutex_unlock(&coder->app->dongles[first].mutex);
+		usleep(1000);
+	}
 	safe_log(coder->app, coder->id, "has taken a dongle");
-	pthread_mutex_lock(&coder->app->dongles[second]);
+		while (1)
+	{
+		pthread_mutex_lock(&coder->app->dongles[second].mutex);
+		if (get_time_ms() >= coder->app->dongles[second].available_at)
+			break ; // if end cooldown, keep the lock, otherwise unlock
+		pthread_mutex_unlock(&coder->app->dongles[second].mutex);
+		usleep(1000);
+	}
 	safe_log(coder->app, coder->id, "has taken a dongle");
 }
 
@@ -68,62 +83,78 @@ void	release_dongles(t_coder *coder)
 	int second;
 
 	get_order(coder, &first, &second);
-	pthread_mutex_unlock(&coder->app->dongles[second]);
-	pthread_mutex_unlock(&coder->app->dongles[first]);
+	coder->app->dongles[second].available_at = 
+	get_time_ms() + coder->app->config.dongle_cooldown;
+	pthread_mutex_unlock(&coder->app->dongles[second].mutex); // ava_t = releas_t + cldown_t
+	coder->app->dongles[first].available_at = 
+	get_time_ms() + coder->app->config.dongle_cooldown;
+	pthread_mutex_unlock(&coder->app->dongles[first].mutex);
 }
 
-// 1. unlock 顺序可以改吗？
+// subject：
+// After being released, a dongle is unavailable until its cooldown has passed.
+// 也就是：从 release 的那一刻开始算 cooldown。不是从 compile 开始，也不是从 get_order 开始
+// available_at = get_time_ms() + dongle_cooldown;
 
-// 现在：
+// 意思是：
 
-// pthread_mutex_unlock(&coder->app->dongles[second]);
-// pthread_mutex_unlock(&coder->app->dongles[first]);
+// 现在放下 dongle
+// 从现在开始冷却 cooldown ms
+// 到 available_at 之后才能再次被拿
 
-// 这是反向释放。
-
-// 通常习惯：
-
-// lock:   first -> second
-// unlock: second -> first
-
-// 这叫 LIFO，像栈一样，比较清晰。
-
-// 2. 
-// There are as many dongles as coders.
-// dongle 数量 = coder 数量
-
-// 3. 
-// dongles = 多个资源锁
-// log_mutex = 一个打印锁
+// release_dongles()
+// available_at = get_time_ms() + dongle_cooldown;
+// 从 release 那一刻开始计算 cooldown
 
 
-// ✗ ./codexion 4 800 200 300 500 3 5 fifo
-// 0 1 has taken a dongle
-// 0 2 has taken a dongle
-// 0 3 has taken a dongle
-// 0 3 has taken a dongle
-// 0 3 is compiling
-// 200 3 is debugging
-// 200 2 has taken a dongle
-// 200 2 is compiling
-// 400 2 is debugging
-// 401 1 has taken a dongle
-// 401 1 is compiling
-// 500 3 is refactoring
-// 601 1 is debugging
-// 601 4 has taken a dongle
-// 601 4 has taken a dongle
-// 601 4 is compiling
-// 701 2 is refactoring
-// 801 4 is debugging
-// 901 1 is refactoring
-// 1102 4 is refactoring
+// 2. void	take_dongles(t_coder *coder)
+// 逻辑是：
+// lock mutex
+// ↓
+// 检查 cooldown 是否结束
+// ↓
+// 如果没结束:
+//     unlock
+//     sleep 1ms
+//     再来尝试
 
-// mutex_lock 的行为是：
+// 如果结束:
+//     保持 lock
+//     真正拿到 dongle
 
-// 如果 mutex 空闲
-// 立刻成功
-// 继续执行
-// 如果 mutex 已被占
-// 线程阻塞等待
-// small forever left
+
+// 3. busy waiting
+// while (get_time_ms() < available_at)
+// 	;
+
+// CPU：
+// 一直运行这个线程
+// 每秒检查几亿次
+// 占满 CPU。
+
+// sleep waiting
+// while (get_time_ms() < available_at)
+// 	usleep(1000);
+
+// CPU：
+// 线程睡眠
+// 1ms 后再唤醒检查
+// 几乎不占 CPU。
+// 对，usleep(10) 太短了。
+
+// 注意单位：
+// usleep(10);
+// 不是 10ms，而是 10 microseconds = 0.01ms。
+// 所以它会变成：
+// 每 0.01ms 醒一次
+// 每 1ms 醒 100 次
+// 每 1 秒醒 100,000 次
+// 这会增加 CPU 调度负担。
+
+// 而：
+// usleep(1000);
+// 是：
+// 1000 microseconds = 1ms
+// 每 1ms 醒一次
+// 每 1 秒醒 1000 次
+// 对这个项目已经够精确了。

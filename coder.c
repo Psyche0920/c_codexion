@@ -6,7 +6,7 @@
 /*   By: wehan <wehan@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/17 17:41:54 by wehan             #+#    #+#             */
-/*   Updated: 2026/05/19 20:36:19 by wehan            ###   ########.fr       */
+/*   Updated: 2026/05/19 21:34:43 by wehan            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,11 +19,11 @@ void	*coder_routine(void *arg)
 	coder = (t_coder *)arg;
 	if (coder->app->config.number_of_coders == 1)
 	{
-		pthread_mutex_lock(&coder->app->dongles[0]);
+		pthread_mutex_lock(&coder->app->dongles[0].mutex);
 		safe_log(coder->app, coder->id, "has taken a dongle");
 		while(!is_stopped(coder->app))
-			usleep(1000);
-		pthread_mutex_unlock(&coder->app->dongles[0]);
+			usleep(1000);  // avoid busy waiting: cpu immer check if stop
+		pthread_mutex_unlock(&coder->app->dongles[0].mutex);
 		return (NULL);
 	}
 	while (!is_stopped(coder->app) && coder->compile_count < coder->app->config.number_of_compiles_required)
