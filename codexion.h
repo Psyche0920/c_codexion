@@ -6,7 +6,7 @@
 /*   By: wehan <wehan@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/17 12:36:39 by wehan             #+#    #+#             */
-/*   Updated: 2026/05/19 22:07:13 by wehan            ###   ########.fr       */
+/*   Updated: 2026/05/20 12:36:53 by wehan            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,6 +95,11 @@ void	update_compile_start(t_coder *coder);
 int		heap_push(t_dongle *dongle, t_request request, int scheduler);
 int		heap_peek(t_dongle *dongle);
 int		heap_remove(t_dongle *dongle, int coder_id, int scheduler);
+
+int		request_less(t_request a, t_request b, int scheduler);
+void	swap_request(t_request *a, t_request *b);
+void	heap_up(t_dongle *dongle, int index, int scheduler);
+void	heap_down(t_dongle *dongle, int index, int scheduler);
 
 
 #endif
