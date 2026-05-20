@@ -20,21 +20,36 @@ int heap_peek(t_dongle *dongle)
 int heap_remove(t_dongle *dongle, int coder_id, int scheduler)
 {
     int i;
+    int parent;
 
     i = 0;
-    while(i < dongle->size)
+    while(i < dongle->size)  // sorting through, arbitrary remove: coder got dongle, coder burnedout(edf reached)//monitor thread fdound coder dead, simulation stopped
     {
-        if (dongle->heap[i].coder_id == coder_id)
+        if (dongle->heap[i].coder_id == coder_id)  // get the coder in heap
         {
-            dongle->heap[i] = dongle->heap[dongle->size - 1];
-            dongle->size--;
-            heap_down(dongle, i, scheduler);
+            dongle->heap[i] = dongle->heap[dongle->size - 1]; //replace the removed one pos with the last ele
+            dongle->size--; //effective range exclude the last ele, which will be released together with dongle in the end
+            
+            if (i > 0)
+            {
+                parent = (i - 1) / 2;
+                if (request_less(dongle->heap[i], dongle->heap[parent], scheduler)) // 1, right, child < parent
+                    heap_up(dongle, i, scheduler);
+                else
+                    heap_down(dongle, i, scheduler); // !!! only focus on the current, before already sorted
+            }
+            else
+                heap_down(dongle, i, scheduler);
             return (1);
         }
         i++;
     }
     return (0);
 }
+
+// find the coder to be removed, last ele cover, reduce effective scope,
+// if not on the top(in the middle), compare with the current(coz previous already sorted), head up or down;
+// if on the top, head down;
 
 // 1. queue is a rule 
 // a. so binary (min) heap (priority) queue(partical searching, child-parent priority) 
