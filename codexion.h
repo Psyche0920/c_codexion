@@ -6,7 +6,7 @@
 /*   By: wehan <wehan@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/17 12:36:39 by wehan             #+#    #+#             */
-/*   Updated: 2026/05/21 21:27:00 by wehan            ###   ########.fr       */
+/*   Updated: 2026/05/21 22:11:04 by wehan            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 # include <stdlib.h>
 # include <stdio.h>
 # include <string.h>
+# include <time.h>
 
 typedef struct s_app t_app;
 
@@ -87,7 +88,7 @@ void	destroy_dongles(t_app *app);
 int		take_dongles(t_coder *coder);
 void	release_dongles(t_coder *coder);
 void	get_order(t_coder *coder, int *first, int *second);
-int		request_dongle(t_coder *coder, int index);
+int		request_dongle(t_coder *coder, int index, long timeout_ms);  //最多等待这个 dongle 多少毫秒
 void	release_one_dongle(t_coder *coder, int index);
 
 void	*monitor_routine(void *arg);

@@ -45,15 +45,22 @@ int	take_dongles(t_coder *coder)
 	int	second;
 
 	get_order(coder, &first, &second);
-	if (!request_dongle(coder, first))
-		return(0);
-	if(!request_dongle(coder, second))
+	while(!is_stopped(coder->app)) // if nonstop
 	{
-		release_one_dongle(coder, first);
-		return (0);
+		if(request_dongle(coder, first, 2)) //!!!try get first，wait max 2ms。
+		{
+			if (request_dongle(coder, second, 2))
+			return (1);
+			release_one_dongle(coder, first);
+		}
+		usleep(1000);  //wait 1ms and retry, avoid cpu turning immer
 	}
-	return (1);
+	return (0);  // if stop, quit with failure
 }
+//尝试拿第一把
+// 如果第一把成功，再短暂尝试第二把
+// 如果第二把失败，立刻释放第一把
+// 然后重新开始
 
 void	release_dongles(t_coder *coder)
 {
@@ -64,37 +71,21 @@ void	release_dongles(t_coder *coder)
 	release_one_dongle(coder, second);
 	release_one_dongle(coder, first);
 }
+// Subject 要求 EDF 下 feasible 参数不能 starvation。
 
-// subject：
-// After being released, a dongle is unavailable until its cooldown has passed.
-// 也就是：从 release 的那一刻开始算 cooldown。不是从 compile 开始，也不是从 get_order 开始
-// available_at = get_time_ms() + dongle_cooldown;
+// Next Step
 
-// 意思是：
+// 把逻辑改成：
 
-// 现在放下 dongle
-// 从现在开始冷却 cooldown ms
-// 到 available_at 之后才能再次被拿
+// 拿第一把
+// 尝试拿第二把
+// 如果第二把拿不到：
+//     释放第一把
+//     稍等
+//     重新尝试
 
-// release_dongles()
-// available_at = get_time_ms() + dongle_cooldown;
-// 从 release 那一刻开始计算 cooldown
+// 也就是修：
 
-//
+// take_dongles()
 
-// // // init_dongles：申请 number_of_coders 个 dongle。
-// // 每个 dongle 初始化 mutex、condition variable、cooldown 时间、occupied 状态、heap size/capacity，
-// 并 malloc 一块 request heap。
-
-// // // destroy_dongles：每个 dongle 先 free 自己的 heap，
-// 再 destroy cond 和 mutex，最后 free 整个 dongles 数组。
-
-// // // take_dongles：先用 get_order 算出这个 coder 该拿哪两把 dongle，
-// 然后按固定顺序请求两把，避免死锁。
-
-// // // request_dongle：创建 request，放入当前 dongle 的 heap；
-// // 然后等待，直到这个 dongle 没被占、cooldown 结束、并且 heap top 是自己。
-// 满足后 remove 自己的 request，标记 occupied，打印拿到 dongle。
-
-// // // release_one_dongle：释放时设置新的 available_at，把 occupied 设回 0，
-// // 然后 pthread_cond_broadcast 唤醒等待这个 dongle 的 threads。
+// 不要让 coder hold one dongle while waiting forever。

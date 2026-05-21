@@ -43,18 +43,28 @@ static int can_take_dongle(t_coder *coder, t_dongle *dongle)
 	return (1);
 }
 
-int request_dongle(t_coder *coder, int index)
+int request_dongle(t_coder *coder, int index, long timeout_ms)
 {
-	t_dongle	*dongle;
-	t_request	request;
+	t_dongle		*dongle;
+	t_request		request;
+	struct timeval	tv;
+	struct timespec	ts;
 
 	dongle = &coder->app->dongles[index];
 	request = make_request(coder);
 	pthread_mutex_lock(&dongle->mutex);
 	heap_push(dongle, request, coder->app->config.scheduler);
+	gettimeofday(&tv, NULL);
+	ts.tv_sec = tv.tv_sec;
+	ts.tv_nsec = (tv.tv_usec + timeout_ms * 1000) * 1000; // trans into nsec
+	while(ts.tv_nsec >= 1000000000) // if nsec>=1sec, make it into sec
+	{
+		ts.tv_sec++;
+		ts.tv_nsec -= 1000000000;
+	}
 	while(!is_stopped(coder->app) && !can_take_dongle(coder, dongle))  
 	// end condi-stop & can take dongle->take dongle// oder if 0 (notstop, cannot take dongle->wait)
-		pthread_cond_wait(&dongle->cond, &dongle->mutex);
+		pthread_cond_timedwait(&dongle->cond, &dongle->mutex, &ts);
 	if (is_stopped(coder->app)) // if 1(program stop)
 	{
 		heap_remove(dongle, coder->id, coder->app->config.scheduler);  // remove its request
@@ -79,6 +89,90 @@ void release_one_dongle(t_coder *coder, int index)
 	pthread_cond_broadcast(&dongle->cond);
 	pthread_mutex_unlock(&dongle->mutex);
 }
+
+// 1. 为什么 timeout_ms = 2
+// request_dongle(coder, first, 2)
+// request_dongle(coder, second, 2)
+
+// 这里的 2 是：
+
+// 最多等 2ms
+
+// 不是 subject 参数，是我们自己加的 try timeout。
+
+// 目的：
+
+// 不要拿着第一把 dongle 永远等第二把
+
+// 如果第二把 2ms 内拿不到：
+
+// 释放第一把
+// 重新尝试
+
+// 这样避免：
+
+// hold one dongle while waiting forever
+
+// 你也可以用 1 或 3，2ms 是折中：够短，不容易长期占资源；又不会疯狂空转。
+
+// 2. gettimeofday() vs get_time_ms()
+// gettimeofday()
+
+// 系统函数：
+
+// struct timeval tv;
+
+// gettimeofday(&tv, NULL);
+
+// 它把当前真实时间写进 tv：
+
+// tv.tv_sec   // 秒
+// tv.tv_usec  // 微秒
+
+// NULL 表示不用 timezone 信息。
+
+// get_time_ms()
+
+// 你自己包装的函数：
+
+// long	get_time_ms(void)
+// {
+// 	struct timeval	tv;
+
+// 	gettimeofday(&tv, NULL);
+// 	return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
+// }
+
+// 它把系统时间转换成：
+
+// milliseconds 毫秒
+
+// 所以：
+
+// gettimeofday = 原始系统时间，秒 + 微秒
+// get_time_ms  = 你项目里方便用的毫秒时间
+// 3. 为什么这里不用 get_time_ms()？
+
+// 因为：
+
+// pthread_cond_timedwait()
+
+// 需要的是：
+
+// struct timespec
+
+// 格式是：
+
+// ts.tv_sec   // 秒
+// ts.tv_nsec  // 纳秒
+
+// 所以我们要用：
+
+// gettimeofday(&tv, NULL);
+
+// 拿到当前秒和微秒，再转换成 timespec。
+
+
 
 // 1. 为什么 arrival_time = get_time_ms()？
 
