@@ -6,7 +6,7 @@
 /*   By: wehan <wehan@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/17 17:41:54 by wehan             #+#    #+#             */
-/*   Updated: 2026/05/19 21:34:43 by wehan            ###   ########.fr       */
+/*   Updated: 2026/05/21 21:23:43 by wehan            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,8 @@ void	*coder_routine(void *arg)
 	}
 	while (!is_stopped(coder->app) && coder->compile_count < coder->app->config.number_of_compiles_required)
 	{
-		take_dongles(coder);
+		if(!take_dongles(coder))
+			return (NULL);
 		if (is_stopped(coder->app))
 		{
 			release_dongles(coder);

@@ -12,9 +12,19 @@ int	is_stopped(t_app *app)
 
 void	set_stop(t_app *app)
 {
+	int	i;
+
 	pthread_mutex_lock(&app->state_mutex);
 	app->stop = 1;
 	pthread_mutex_unlock(&app->state_mutex);
+	i = 0;
+	while(app->dongles && i < app->config.number_of_coders)
+	{
+		pthread_mutex_lock(&app->dongles[i].mutex);
+		pthread_cond_broadcast(&app->dongles[i].cond);  // fix the bug, everycoder should be broadcasted
+		pthread_mutex_unlock(&app->dongles[i].mutex);
+		i++;
+	}
 }
 
 void	update_compile_start(t_coder *coder)

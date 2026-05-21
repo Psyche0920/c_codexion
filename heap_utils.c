@@ -27,12 +27,10 @@ void heap_up(t_dongle *dongle, int index, int scheduler)
         if (request_less(dongle->heap[index], dongle->heap[parent], scheduler))
         {
             swap_request(&dongle->heap[index], &dongle->heap[parent]);
-            index = parent;
+            index = parent; //move up
         }
         else
             break ; // return 0, if child > parent, break
-        swap_request(&dongle->heap[index], &dongle->heap[parent]);
-        index = parent; //move up
     }
 }
 

@@ -6,7 +6,7 @@
 /*   By: wehan <wehan@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/17 12:36:39 by wehan             #+#    #+#             */
-/*   Updated: 2026/05/20 12:36:53 by wehan            ###   ########.fr       */
+/*   Updated: 2026/05/21 21:27:00 by wehan            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,8 +84,11 @@ void	*coder_routine(void *arg);
 
 int		init_dongles(t_app *app);
 void	destroy_dongles(t_app *app);
-void	take_dongles(t_coder *coder);
+int		take_dongles(t_coder *coder);
 void	release_dongles(t_coder *coder);
+void	get_order(t_coder *coder, int *first, int *second);
+int		request_dongle(t_coder *coder, int index);
+void	release_one_dongle(t_coder *coder, int index);
 
 void	*monitor_routine(void *arg);
 int		is_stopped(t_app *app);

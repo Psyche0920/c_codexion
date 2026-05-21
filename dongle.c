@@ -39,51 +39,20 @@ void	destroy_dongles(t_app *app)
 	free(app->dongles);
 }
 
-static void	get_order(t_coder *coder, int *first, int *second)
-{
-	int	left;
-	int	right;
-	int	n;
-
-	n = coder->app->config.number_of_coders;
-	left = coder->id - 1;
-	right = coder->id % n;
-	if (left < right)
-	{
-		*first = left;
-		*second = right;
-	}
-	else
-	{
-		*first = right;
-		*second = left;
-	}
-}
-
-void	take_dongles(t_coder *coder)
+int	take_dongles(t_coder *coder)
 {
 	int	first;
 	int	second;
 
 	get_order(coder, &first, &second);
-	while (1)
+	if (!request_dongle(coder, first))
+		return(0);
+	if(!request_dongle(coder, second))
 	{
-		pthread_mutex_lock(&coder->app->dongles[first].mutex);
-		if (get_time_ms() >= coder->app->dongles[first].available_at)
-			break ;
-		pthread_mutex_unlock(&coder->app->dongles[first].mutex);
-		usleep(1000);
+		release_one_dongle(coder, first);
+		return (0);
 	}
-	safe_log(coder->app, coder->id, "has taken a dongle");
-		while (1)
-	{
-		pthread_mutex_lock(&coder->app->dongles[second].mutex);
-		if (get_time_ms() >= coder->app->dongles[second].available_at)
-			break ; // if end cooldown, keep the lock, otherwise unlock
-		pthread_mutex_unlock(&coder->app->dongles[second].mutex);
-		usleep(1000);
-	}
-	safe_log(coder->app, coder->id, "has taken a dongle");
+	return (1);
 }
 
 void	release_dongles(t_coder *coder)
@@ -92,12 +61,8 @@ void	release_dongles(t_coder *coder)
 	int second;
 
 	get_order(coder, &first, &second);
-	coder->app->dongles[second].available_at = 
-	get_time_ms() + coder->app->config.dongle_cooldown;
-	pthread_mutex_unlock(&coder->app->dongles[second].mutex); // ava_t = releas_t + cldown_t
-	coder->app->dongles[first].available_at = 
-	get_time_ms() + coder->app->config.dongle_cooldown;
-	pthread_mutex_unlock(&coder->app->dongles[first].mutex);
+	release_one_dongle(coder, second);
+	release_one_dongle(coder, first);
 }
 
 // subject：
@@ -115,55 +80,21 @@ void	release_dongles(t_coder *coder)
 // available_at = get_time_ms() + dongle_cooldown;
 // 从 release 那一刻开始计算 cooldown
 
+//
 
-// 2. void	take_dongles(t_coder *coder)
-// 逻辑是：
-// lock mutex
-// ↓
-// 检查 cooldown 是否结束
-// ↓
-// 如果没结束:
-//     unlock
-//     sleep 1ms
-//     再来尝试
+// // // init_dongles：申请 number_of_coders 个 dongle。
+// // 每个 dongle 初始化 mutex、condition variable、cooldown 时间、occupied 状态、heap size/capacity，
+// 并 malloc 一块 request heap。
 
-// 如果结束:
-//     保持 lock
-//     真正拿到 dongle
+// // // destroy_dongles：每个 dongle 先 free 自己的 heap，
+// 再 destroy cond 和 mutex，最后 free 整个 dongles 数组。
 
+// // // take_dongles：先用 get_order 算出这个 coder 该拿哪两把 dongle，
+// 然后按固定顺序请求两把，避免死锁。
 
-// 3. busy waiting
-// while (get_time_ms() < available_at)
-// 	;
+// // // request_dongle：创建 request，放入当前 dongle 的 heap；
+// // 然后等待，直到这个 dongle 没被占、cooldown 结束、并且 heap top 是自己。
+// 满足后 remove 自己的 request，标记 occupied，打印拿到 dongle。
 
-// CPU：
-// 一直运行这个线程
-// 每秒检查几亿次
-// 占满 CPU。
-
-// sleep waiting
-// while (get_time_ms() < available_at)
-// 	usleep(1000);
-
-// CPU：
-// 线程睡眠
-// 1ms 后再唤醒检查
-// 几乎不占 CPU。
-// 对，usleep(10) 太短了。
-
-// 注意单位：
-// usleep(10);
-// 不是 10ms，而是 10 microseconds = 0.01ms。
-// 所以它会变成：
-// 每 0.01ms 醒一次
-// 每 1ms 醒 100 次
-// 每 1 秒醒 100,000 次
-// 这会增加 CPU 调度负担。
-
-// 而：
-// usleep(1000);
-// 是：
-// 1000 microseconds = 1ms
-// 每 1ms 醒一次
-// 每 1 秒醒 1000 次
-// 对这个项目已经够精确了。
+// // // release_one_dongle：释放时设置新的 available_at，把 occupied 设回 0，
+// // 然后 pthread_cond_broadcast 唤醒等待这个 dongle 的 threads。
