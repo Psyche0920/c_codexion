@@ -102,7 +102,7 @@ A coder can still burn out under FIFO, because FIFO does not care who is closest
 
 ---
 
-## Binary Heap Priority Queque
+## Binary Heap Priority Queue
 
 A binary min-heap stores requests with the highest-priority request at index `0`.
 
@@ -113,7 +113,7 @@ left child  = 2i + 1
 right child = 2i + 2
 ```
 
-Opeartions implemented:
+Opertions implemented:
 - `heap_push`
 - `heap_peek`
 - `heap_remove`
@@ -123,7 +123,7 @@ Opeartions implemented:
 This heap is stored in a malloc-allocated array. Each dongle has:
 - `size`: current number of requests
 - `capacity`: maximum number of requests, set to `number_of_coders`
-This avoids linnk-node complexity and keeps heap storage contiguous.
+This avoids linked-list complexity and keeps heap storage contiguous.
 
 ---
 
@@ -153,7 +153,7 @@ A coder must acquire two dongles to compile. A previous issue was that a coder c
 
 The solution:
 - try to acquire the first dongle
-- try to actquire the second dongle with a short timed wait
+- try to acquire the second dongle with a short timed wait
 - if the second dongle cannot be acquired, release the first dongle
 - retry later
 
@@ -195,7 +195,7 @@ This is used to keep burnout detection within the required 10ms tolerance, allow
 
 ### Stop Wakeup
 If the simulation stops while coders are waiting in 
-`pthread_cond_wait()` or `pthread_cond_timedwait()`, they do not wake automatically.
+pthread_cond_timedwait()`, they do not wake automatically.
 
 Therefore Therefore `set_stop()` broadcasts to all dongle condition variables so waiting coders can wake, recheck `stop`, and exit safely.
 
@@ -222,6 +222,8 @@ Coders wait when:
 - the simulation is still running
 
 A wakeup does not mean the coder can immediately take the dongle. The condition is always checked again in a loop.
+In this implementation, coders wait with `pthread_cond_timedwait()`, not `pthread_cond_wait()`.
+The timeout is used so a coder does not hold one dongle forever while waiting for the second dongle.
 
 ### Timed Wait
 `pthread_cond_timedwait()` is used when trying to avoid holding one dongle forever.
