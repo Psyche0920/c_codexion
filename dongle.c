@@ -57,10 +57,6 @@ int	take_dongles(t_coder *coder)
 	}
 	return (0);  // if stop, quit with failure
 }
-//尝试拿第一把
-// 如果第一把成功，再短暂尝试第二把
-// 如果第二把失败，立刻释放第一把
-// 然后重新开始
 
 void	release_dongles(t_coder *coder)
 {
@@ -71,21 +67,3 @@ void	release_dongles(t_coder *coder)
 	release_one_dongle(coder, second);
 	release_one_dongle(coder, first);
 }
-// Subject 要求 EDF 下 feasible 参数不能 starvation。
-
-// Next Step
-
-// 把逻辑改成：
-
-// 拿第一把
-// 尝试拿第二把
-// 如果第二把拿不到：
-//     释放第一把
-//     稍等
-//     重新尝试
-
-// 也就是修：
-
-// take_dongles()
-
-// 不要让 coder hold one dongle while waiting forever。
