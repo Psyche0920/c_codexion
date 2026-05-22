@@ -1,13 +1,25 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   monitor.c                                          :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: wehan <wehan@student.42.fr>                +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/05/22 20:41:26 by wehan             #+#    #+#             */
+/*   Updated: 2026/05/22 20:41:34 by wehan            ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "codexion.h"
 
 int	is_stopped(t_app *app)
 {
-    int stop;
+	int	stop;
 
-    pthread_mutex_lock(&app->state_mutex);
-    stop = app->stop;
-    pthread_mutex_unlock(&app->state_mutex);
-    return (stop);
+	pthread_mutex_lock(&app->state_mutex);
+	stop = app->stop;
+	pthread_mutex_unlock(&app->state_mutex);
+	return (stop);
 }
 
 void	set_stop(t_app *app)
@@ -18,10 +30,10 @@ void	set_stop(t_app *app)
 	app->stop = 1;
 	pthread_mutex_unlock(&app->state_mutex);
 	i = 0;
-	while(app->dongles && i < app->config.number_of_coders)
+	while (app->dongles && i < app->config.number_of_coders)
 	{
 		pthread_mutex_lock(&app->dongles[i].mutex);
-		pthread_cond_broadcast(&app->dongles[i].cond);  // fix the bug, everycoder should be broadcasted
+		pthread_cond_broadcast(&app->dongles[i].cond);
 		pthread_mutex_unlock(&app->dongles[i].mutex);
 		i++;
 	}
@@ -36,7 +48,7 @@ void	update_compile_start(t_coder *coder)
 
 static int	check_burnout(t_app *app, int i)
 {
-	long 	now;
+	long	now;
 	long	last;
 
 	pthread_mutex_lock(&app->state_mutex);
@@ -61,7 +73,7 @@ void	*monitor_routine(void *arg)
 	while (!is_stopped(app))
 	{
 		i = 0;
-		while(i < app->config.number_of_coders)
+		while (i < app->config.number_of_coders)
 		{
 			if (check_burnout(app, i))
 				return (NULL);
