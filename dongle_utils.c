@@ -6,7 +6,7 @@
 /*   By: wehan <wehan@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/22 18:03:11 by wehan             #+#    #+#             */
-/*   Updated: 2026/05/23 15:02:46 by wehan            ###   ########.fr       */
+/*   Updated: 2026/05/23 18:03:10 by wehan            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,7 +83,7 @@ int	request_dongle(t_coder *coder, int index, long timeout_ms)
 	while (!is_stopped(coder->app)
 		&& !can_take_dongle(coder, dongle) && ret == 0)
 		ret = pthread_cond_timedwait(&dongle->cond, &dongle->mutex, &ts);
-	if (is_stopped(coder->app))
+	if (is_stopped(coder->app) || !can_take_dongle(coder, dongle))
 	{
 		heap_remove(dongle, coder->id, coder->app->config.scheduler);
 		pthread_mutex_unlock(&dongle->mutex);
