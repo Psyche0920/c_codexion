@@ -113,7 +113,7 @@ left child  = 2i + 1
 right child = 2i + 2
 ```
 
-Opertions implemented:
+Operations implemented:
 - `heap_push`
 - `heap_peek`
 - `heap_remove`
@@ -195,9 +195,9 @@ This is used to keep burnout detection within the required 10ms tolerance, allow
 
 ### Stop Wakeup
 If the simulation stops while coders are waiting in 
-pthread_cond_timedwait()`, they do not wake automatically.
+`pthread_cond_timedwait()`, they do not wake automatically.
 
-Therefore Therefore `set_stop()` broadcasts to all dongle condition variables so waiting coders can wake, recheck `stop`, and exit safely.
+Therefore `set_stop()` broadcasts to all dongle condition variables so waiting coders can wake, recheck `stop`, and exit safely.
 
 ### Log Serialization
 All output is protected by `log_mutex`, so log lines do not interleave.
@@ -284,7 +284,7 @@ Expected output:
 ./codexion 4 5000 200 300 500 3 5 edf
 ```
 
-Expected: feasible EDF execution without starvation.
+Expected: feasible EDF execution without burnout.
 
 ### Single Coder
 
@@ -301,6 +301,16 @@ Expected: the coder takes one dongle and eventually burns out without self-deadl
 
 Expected: at least one coder burns out because the timing is infeasible. The exact coder ID may vary because thread scheduling is nondeterministic.
 
+### FIFO vs EDF
+```bash
+echo "FIFO"
+./codexion 5 900 200 200 200 3 5 fifo | grep "is compiling"
+
+echo "EDF"
+./codexion 5 900 200 200 200 3 5 edf | grep "is compiling"
+```
+
+
 ### Valgrind
 ```bash
 valgrind --leak-check=full ./codexion 4 5000 200 300 500 3 5 fifo
@@ -308,7 +318,6 @@ valgrind --leak-check=full ./codexion 4 5000 200 300 500 3 5 fifo
 
 ---
 
-## Resources
 ## Resources
 - Bilibili pthread / synchronization learning videos:
   https://www.bilibili.com/video/BV1Ev411G7i3/

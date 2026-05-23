@@ -6,7 +6,7 @@
 /*   By: wehan <wehan@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/17 17:41:54 by wehan             #+#    #+#             */
-/*   Updated: 2026/05/22 20:26:38 by wehan            ###   ########.fr       */
+/*   Updated: 2026/05/23 13:57:45 by wehan            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,8 +34,12 @@ static int	run_compile(t_coder *coder)
 	update_compile_start(coder);
 	safe_log(coder->app, coder->id, "is compiling");
 	usleep(coder->app->config.time_to_compile * 1000);
+	pthread_mutex_lock(&coder->app->state_mutex);
 	coder->compile_count++;
+	pthread_mutex_unlock(&coder->app->state_mutex);
 	release_dongles(coder);
+	if (all_coders_done(coder->app))
+		set_stop(coder->app);
 	return (!is_stopped(coder->app));
 }
 // if nonstop0, return 1
