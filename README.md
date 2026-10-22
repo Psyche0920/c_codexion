@@ -1,3 +1,16 @@
+<!-- repository-badges:start -->
+<div align="center">
+
+[![Contributors](https://img.shields.io/github/contributors/Psyche0920/c_codexion?style=for-the-badge)](https://github.com/Psyche0920/c_codexion/graphs/contributors)
+[![Forks](https://img.shields.io/github/forks/Psyche0920/c_codexion?style=for-the-badge)](https://github.com/Psyche0920/c_codexion/forks)
+[![Stars](https://img.shields.io/github/stars/Psyche0920/c_codexion?style=for-the-badge)](https://github.com/Psyche0920/c_codexion/stargazers)
+[![Issues](https://img.shields.io/github/issues/Psyche0920/c_codexion?style=for-the-badge)](https://github.com/Psyche0920/c_codexion/issues)
+[![License](https://img.shields.io/badge/license-not_specified-lightgrey?style=for-the-badge)](https://github.com/Psyche0920/c_codexion)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Weijia_Han-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/weijia-han-6162581b5/)
+
+</div>
+<!-- repository-badges:end -->
+
 *This project has been created as part of the 42 curriculum by wehan.*
 # Codexion
 ## Description
